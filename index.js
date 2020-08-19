@@ -14,17 +14,28 @@ Promise.config({
     }
 });
 
-function Mailchimp (api_key) {
-  var api_key_regex = /.+\-.+/
+const HEADERS = {
+  AUTHORIZATION: 'Authorization',
+};
 
-  if (!api_key_regex.test(api_key)) {
-    throw new Error('missing or invalid api key: ' + api_key)
+function Mailchimp ({ api_key, access_token, server = 'https://server.api.mailchimp.com/3.0' }) {
+
+  if(api_key) {
+    var api_key_regex = /.+\-.+/
+    if (!api_key_regex.test(api_key)) {
+      throw new Error('missing or invalid api key: ' + api_key)
+    }
+  
+    this.__api_key = api_key;
+    this.__base_url = "https://"+ this.__api_key.split('-')[1] + ".api.mailchimp.com/3.0"
+  } else if (access_token) {
+    this.__access_token = access_token;
+    this.__base_url = server;
+  } else {
+    throw new Error('api_key or access_token is required');
   }
-
-
-  this.__api_key = api_key;
-  this.__base_url = "https://"+ this.__api_key.split('-')[1] + ".api.mailchimp.com/3.0"
 }
+
 
 var formatPath = function (path, path_params) {
 
@@ -483,19 +494,25 @@ Mailchimp.prototype.request = function (options, done) {
       return;
     }
 
-    request({
+    // headers
+    const headers = {
+      'User-Agent' : 'mailchimp-api-v3 : https://github.com/thorning/node-mailchimp',
+    };
+    if(mailchimp.__access_token) {
+      Object.assign(headers, { [HEADERS.AUTHORIZATION]: mailchimp.__access_token });
+    }
+
+    request(_.omitBy({
       method : method,
       url : mailchimp.__base_url + path,
-      auth : {
+      auth : mailchimp.__api_key ? {
         user : 'any',
         password : mailchimp.__api_key
-      },
+      } : undefined,
       json : body,
       qs : query,
-      headers : {
-        'User-Agent' : 'mailchimp-api-v3 : https://github.com/thorning/node-mailchimp'
-      }
-    }, function (err, response) {
+      headers,
+    }, _.isNil), function (err, response) {
 
       if (err) {
         reject(new Error(err))
