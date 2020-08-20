@@ -19,18 +19,17 @@ const HEADERS = {
 };
 
 function Mailchimp ({ api_key, access_token, base_url }) {
-
   if(api_key) {
     var api_key_regex = /.+\-.+/
     if (!api_key_regex.test(api_key)) {
       throw new Error('missing or invalid api key: ' + api_key)
     }
-  
+
     this.__api_key = api_key;
     this.__base_url = "https://"+ this.__api_key.split('-')[1] + ".api.mailchimp.com/3.0"
   } else if (access_token) {
     this.__access_token = access_token;
-    this.__base_url = base_url;
+    this.__base_url = `${base_url}/3.0`;
   } else {
     throw new Error('api_key or access_token is required');
   }
@@ -58,7 +57,7 @@ var formatPath = function (path, path_params) {
   path = _.reduce(path_params, function (_path, value, param) {
     return _path.replace('{'+param+'}', value);
   }, path)
-  
+
   return path;
 
 }
@@ -209,9 +208,9 @@ Mailchimp.prototype._getAndUnpackBatchResults = function (response_body_url, opt
       entry.on('end', function () {
         results.push(JSON.parse(result_json));
 
-        
 
-        
+
+
       })
     });
 
@@ -222,7 +221,7 @@ Mailchimp.prototype._getAndUnpackBatchResults = function (response_body_url, opt
 
     parse.on('end', function (res) {
       results = _.flatten(results);
-      
+
       //TODO: implement linear sort uding operation id is linear from 0 to length-1
       results.sort(function (result_a, result_b) {
         return result_a.operation_id - result_b.operation_id
@@ -244,7 +243,7 @@ Mailchimp.prototype._getAndUnpackBatchResults = function (response_body_url, opt
         reject(new Error(err));
         return;
       }
-      
+
 
       if (response.statusCode != 200) {
         reject(Object.assign(new Error(), response.body));
@@ -268,11 +267,11 @@ Mailchimp.prototype._getAndUnpackBatchResults = function (response_body_url, opt
   })
 
 
-  
+
 }
 
 Mailchimp.prototype.batchWait = function (batch_id, done, opts) {
-  var mailchimp = this; 
+  var mailchimp = this;
 
   //If done is not a function, and no opts are given, second argument is the opts
   if (!opts && !_.isFunction(done)) {
@@ -286,7 +285,7 @@ Mailchimp.prototype.batchWait = function (batch_id, done, opts) {
   if (!opts.interval) {
     opts.interval = 2000
   }
-  
+
   //default unpack to true
   if (opts.unpack !== false) {
     opts.unpack = true;
@@ -422,7 +421,7 @@ Mailchimp.prototype.batch = function (operations, done, opts) {
     method : 'post',
     path : '/batches',
     body : {
-      operations : _operations  
+      operations : _operations
     }
   })
 
@@ -464,7 +463,7 @@ Mailchimp.prototype.batch = function (operations, done, opts) {
 
   return promise
 
-  
+
 
 }
 
@@ -499,7 +498,7 @@ Mailchimp.prototype.request = function (options, done) {
       'User-Agent' : 'mailchimp-api-v3 : https://github.com/thorning/node-mailchimp',
     };
     if(mailchimp.__access_token) {
-      Object.assign(headers, { [HEADERS.AUTHORIZATION]: mailchimp.__access_token });
+      Object.assign(headers, { [HEADERS.AUTHORIZATION]: `OAuth ${mailchimp.__access_token}` });
     }
 
     request(_.omitBy({
