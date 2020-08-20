@@ -18,7 +18,7 @@ const HEADERS = {
   AUTHORIZATION: 'Authorization',
 };
 
-function Mailchimp ({ api_key, access_token, server = 'https://server.api.mailchimp.com/3.0' }) {
+function Mailchimp ({ api_key, access_token, base_url }) {
 
   if(api_key) {
     var api_key_regex = /.+\-.+/
@@ -30,7 +30,7 @@ function Mailchimp ({ api_key, access_token, server = 'https://server.api.mailch
     this.__base_url = "https://"+ this.__api_key.split('-')[1] + ".api.mailchimp.com/3.0"
   } else if (access_token) {
     this.__access_token = access_token;
-    this.__base_url = server;
+    this.__base_url = base_url;
   } else {
     throw new Error('api_key or access_token is required');
   }
